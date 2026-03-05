@@ -278,7 +278,8 @@ function SocialDropdown({
   );
 }
 
-// ─── Image Insert Dropdown (replaces window.prompt) ──────────────────────────
+// ─── Image Insert Dropdown ────────────────────────────────────────────────────
+// Supports both URL entry and local file via Tauri file dialog (base64 embed)
 function ImageDropdown({
   openId, setOpenId, onInsert,
 }: {
@@ -289,53 +290,114 @@ function ImageDropdown({
   const btnRef   = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const isOpen   = openId === "image";
-  const [url, setUrl] = useState("");
-  const [alt, setAlt] = useState("");
+  const [url, setUrl]       = useState("");
+  const [alt, setAlt]       = useState("");
+  const [loading, setLoading] = useState(false);
+  const [sizeWarn, setSizeWarn] = useState(false);
 
   useClickOutside(panelRef, useCallback(() => {
-    if (isOpen) setOpenId(null);
+    if (isOpen) { setOpenId(null); setSizeWarn(false); }
   }, [isOpen, setOpenId]));
 
   const handleInsert = () => {
     if (!url.trim()) return;
     onInsert(url.trim(), alt.trim());
-    setUrl("");
-    setAlt("");
+    setUrl(""); setAlt(""); setSizeWarn(false);
     setOpenId(null);
+  };
+
+  const handleBrowse = async () => {
+    try {
+      // Dynamic import so it doesn't break in browser/dev without Tauri
+      const { open }   = await import("@tauri-apps/plugin-dialog");
+      const { readFile } = await import("@tauri-apps/plugin-fs");
+
+      const selected = await open({
+        multiple: false,
+        filters: [{ name: "Images", extensions: ["png", "jpg", "jpeg", "gif", "webp", "svg"] }],
+      });
+      if (!selected) return;
+
+      setLoading(true);
+      const filePath = typeof selected === "string" ? selected : (selected as { path: string }).path;
+      const fileName = filePath.split(/[/\\]/).pop() ?? "image";
+      const ext      = fileName.split(".").pop()?.toLowerCase() ?? "png";
+      const mimeMap: Record<string, string> = {
+        png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg",
+        gif: "image/gif", webp: "image/webp", svg: "image/svg+xml",
+      };
+      const mime = mimeMap[ext] ?? "image/png";
+
+      const bytes   = await readFile(filePath);
+      const base64  = btoa(String.fromCharCode(...bytes));
+      const dataUrl = `data:${mime};base64,${base64}`;
+
+      // Warn if > 500 KB (emails have size limits)
+      if (bytes.length > 500_000) setSizeWarn(true);
+      else setSizeWarn(false);
+
+      setUrl(dataUrl);
+      setAlt(alt || fileName.replace(/\.[^.]+$/, ""));
+    } catch (err) {
+      // Not running inside Tauri (e.g. browser dev) — silently ignore
+      console.warn("File dialog not available:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <>
       <ToolbarButton
         btnRef={btnRef} title="Insert Image"
-        onClick={() => setOpenId(isOpen ? null : "image")}
+        onClick={() => { setOpenId(isOpen ? null : "image"); setSizeWarn(false); }}
         active={isOpen}
       >
         <ImageIcon size={16} />
       </ToolbarButton>
 
-      <DropdownPortal buttonRef={btnRef} isOpen={isOpen} width={272}>
+      <DropdownPortal buttonRef={btnRef} isOpen={isOpen} width={288}>
         <div ref={panelRef} className="p-3">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-slate-700">Insert Image</p>
-            <button
-              type="button" onClick={() => setOpenId(null)}
-              className="text-slate-400 hover:text-slate-600"
-            >
+            <button type="button" onClick={() => setOpenId(null)} className="text-slate-400 hover:text-slate-600">
               <X size={14} />
             </button>
           </div>
-          <label className="block text-xs text-slate-500 mb-1">Image URL</label>
+
+          {/* Local file picker */}
+          <button
+            type="button"
+            onClick={handleBrowse}
+            disabled={loading}
+            className="flex items-center justify-center gap-2 w-full py-2 mb-3 text-sm border-2 border-dashed border-slate-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors disabled:opacity-50"
+          >
+            <ImageIcon size={15} className="text-slate-400" />
+            <span className="text-slate-600">{loading ? "Loading…" : "Browse local file"}</span>
+          </button>
+
+          {sizeWarn && (
+            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-1 mb-2">
+              ⚠ Large image — may exceed email size limits
+            </p>
+          )}
+
+          <div className="flex items-center gap-2 mb-2">
+            <div className="flex-1 h-px bg-slate-200" />
+            <span className="text-xs text-slate-400">or paste URL</span>
+            <div className="flex-1 h-px bg-slate-200" />
+          </div>
+
           <input
-            autoFocus
             type="url"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            value={url.startsWith("data:") ? "" : url}
+            onChange={(e) => { setUrl(e.target.value); setSizeWarn(false); }}
             onKeyDown={(e) => e.key === "Enter" && handleInsert()}
             placeholder="https://example.com/image.png"
             className="w-full text-sm px-2 py-1.5 border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
           />
-          <label className="block text-xs text-slate-500 mb-1">Alt text (optional)</label>
+
+          <label className="block text-xs text-slate-500 mb-1">Alt text</label>
           <input
             type="text"
             value={alt}
@@ -344,6 +406,7 @@ function ImageDropdown({
             placeholder="Image description"
             className="w-full text-sm px-2 py-1.5 border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3"
           />
+
           <button
             type="button"
             onClick={handleInsert}
@@ -352,6 +415,12 @@ function ImageDropdown({
           >
             Insert
           </button>
+
+          {url.startsWith("data:") && (
+            <p className="text-xs text-slate-400 mt-2 text-center">
+              Local file selected — will embed as base64
+            </p>
+          )}
         </div>
       </DropdownPortal>
     </>

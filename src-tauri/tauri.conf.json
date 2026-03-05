@@ -25,6 +25,16 @@
       "csp": null
     }
   },
+  "plugins": {
+    "dialog": {
+      "open": {
+        "filters": [{ "name": "Images", "extensions": ["png", "jpg", "jpeg", "gif", "webp", "svg"] }]
+      }
+    },
+    "fs": {
+      "scope": ["**"]
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",
