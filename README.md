@@ -33,8 +33,10 @@ sudo apt install -y \
 Install Homebrew if needed, then:
 
 ```bash
-brew install pkg-config gtk+3 webkit2gtk@4.1 librsvg openssl
+brew install pkg-config gtk+3 librsvg openssl
 ```
+
+Note: WebKit is built into macOS, so you don't need webkit2gtk.
 
 You also need Xcode Command Line Tools:
 
