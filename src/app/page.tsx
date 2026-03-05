@@ -1,7 +1,6 @@
 "use client";
 
 import { useAppStore } from "@/lib/store/app-store";
-import LoginForm from "@/components/auth/LoginForm";
 import EmailEditor from "@/components/editor/EmailEditor";
 import EmailPreview from "@/components/preview/EmailPreview";
 import TemplatePanel from "@/components/templates/TemplatePanel";
@@ -9,12 +8,8 @@ import { wrapEmailHtml } from "@/lib/utils/html-export";
 import { Download, Send, Mail } from "lucide-react";
 
 export default function Home() {
-  const { isAuthenticated, currentSubject, setCurrentSubject, currentHtml, orgSlug } =
-    useAppStore();
-
-  if (!isAuthenticated) {
-    return <LoginForm />;
-  }
+  // Skip auth - go straight to email composer
+  const { currentSubject, setCurrentSubject, currentHtml, orgSlug } = useAppStore();
 
   const handleExportHtml = () => {
     const html = wrapEmailHtml(currentHtml, { subject: currentSubject });
@@ -35,7 +30,6 @@ export default function Home() {
           <Mail size={18} className="text-blue-600" />
           StaqMail
         </div>
-        <span className="text-xs text-slate-400">{orgSlug}</span>
 
         <div className="flex-1" />
 
