@@ -12,7 +12,9 @@ Visual email composer for ChurchStaq (Pushpay) — built with Tauri v2 + Next.js
 
 ## Dev Setup
 
-### Prerequisites (Linux)
+### Prerequisites
+
+#### Linux
 
 Install system dependencies first (required for Tauri/WebKit):
 
@@ -26,7 +28,26 @@ sudo apt install -y \
   libssl-dev
 ```
 
-Install Rust if needed:
+#### macOS
+
+Install Homebrew if needed, then:
+
+```bash
+brew install pkg-config gtk+3 webkit2gtk@4.1 librsvg openssl
+```
+
+You also need Xcode Command Line Tools:
+
+```bash
+xcode-select --install
+```
+
+#### Windows
+
+Install Visual Studio Build Tools with C++ workload, or use WSL for easier setup.
+
+#### Install Rust
+
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
