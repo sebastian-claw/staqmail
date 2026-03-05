@@ -1,65 +1,91 @@
-import Image from "next/image";
+"use client";
+
+import { useAppStore } from "@/lib/store/app-store";
+import LoginForm from "@/components/auth/LoginForm";
+import EmailEditor from "@/components/editor/EmailEditor";
+import EmailPreview from "@/components/preview/EmailPreview";
+import TemplatePanel from "@/components/templates/TemplatePanel";
+import { wrapEmailHtml } from "@/lib/utils/html-export";
+import { Download, Send, Mail } from "lucide-react";
 
 export default function Home() {
+  const { isAuthenticated, currentSubject, setCurrentSubject, currentHtml, orgSlug } =
+    useAppStore();
+
+  if (!isAuthenticated) {
+    return <LoginForm />;
+  }
+
+  const handleExportHtml = () => {
+    const html = wrapEmailHtml(currentHtml, { subject: currentSubject });
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${currentSubject || "email"}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="flex flex-col h-screen bg-slate-100 overflow-hidden">
+      {/* Top bar */}
+      <header className="flex items-center gap-4 px-4 py-2 bg-white border-b border-slate-200 shrink-0">
+        <div className="flex items-center gap-2 text-slate-800 font-bold text-base">
+          <Mail size={18} className="text-blue-600" />
+          StaqMail
+        </div>
+        <span className="text-xs text-slate-400">{orgSlug}</span>
+
+        <div className="flex-1" />
+
+        <input
+          type="text"
+          value={currentSubject}
+          onChange={(e) => setCurrentSubject(e.target.value)}
+          placeholder="Email subject..."
+          className="flex-1 max-w-sm px-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+        <div className="flex gap-2">
+          <button
+            onClick={handleExportHtml}
+            className="flex items-center gap-1.5 text-sm px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <Download size={14} />
+            Export HTML
+          </button>
+          <button className="flex items-center gap-1.5 text-sm px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <Send size={14} />
+            Send
+          </button>
         </div>
-      </main>
+      </header>
+
+      {/* Main layout */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Template sidebar */}
+        <aside className="w-56 shrink-0 bg-white border-r border-slate-200 overflow-hidden flex flex-col">
+          <TemplatePanel />
+        </aside>
+
+        {/* Editor + Preview split */}
+        <div className="flex flex-1 gap-3 p-3 overflow-hidden">
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <p className="text-xs text-slate-500 mb-1.5 font-medium">EDITOR</p>
+            <div className="flex-1 overflow-hidden">
+              <EmailEditor />
+            </div>
+          </div>
+
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <p className="text-xs text-slate-500 mb-1.5 font-medium">PREVIEW</p>
+            <div className="flex-1 overflow-hidden rounded-lg border border-slate-200">
+              <EmailPreview />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

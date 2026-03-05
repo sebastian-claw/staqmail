@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# StaqMail
 
-## Getting Started
+Visual email composer for ChurchStaq (Pushpay) — built with Tauri v2 + Next.js.
 
-First, run the development server:
+## Stack
+
+- **Tauri v2** — Desktop shell (Rust)
+- **Next.js 16** — Frontend (static export)
+- **TipTap** — WYSIWYG email editor
+- **Tailwind CSS + shadcn/ui** — UI
+- **Zustand** — State management
+
+## Dev Setup
+
+### Prerequisites (Linux)
+
+Install system dependencies first (required for Tauri/WebKit):
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+sudo apt install -y \
+  pkg-config \
+  libgtk-3-dev \
+  libwebkit2gtk-4.1-dev \
+  libayatana-appindicator3-dev \
+  librsvg2-dev \
+  libssl-dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Install Rust if needed:
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Running
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install
+npm run tauri:dev
+```
 
-## Learn More
+This starts Next.js on localhost:3000 and opens the Tauri window.
 
-To learn more about Next.js, take a look at the following resources:
+### Build for production
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run tauri:build
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project Structure
 
-## Deploy on Vercel
+```
+src/
+  app/              → Next.js app router
+  components/
+    editor/         → TipTap WYSIWYG editor + toolbar
+    preview/        → Live HTML email preview (iframe)
+    auth/           → ChurchStaq login form
+    templates/      → Template save/load sidebar
+  lib/
+    api/            → ChurchStaq API client
+    store/          → Zustand global state
+    utils/          → HTML export, helpers
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+src-tauri/
+  src/
+    lib.rs          → Tauri setup + command registration
+    commands/
+      storage.rs    → File export/read Rust commands
+  tauri.conf.json   → Window config (1200×800)
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Status
+
+- ✅ Next.js static export builds successfully
+- ✅ TypeScript compiles clean
+- ✅ All frontend components scaffolded
+- ⚠️  Tauri dev requires GTK system libs (see Prerequisites above)
