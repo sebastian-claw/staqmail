@@ -78,6 +78,14 @@ export default function LoginForm() {
           >
             {loading ? "Connecting..." : "Connect to ChurchStaq"}
           </button>
+
+          <button
+            type="button"
+            onClick={() => setAuth(false, "")}
+            className="w-full bg-slate-100 text-slate-600 py-2 rounded-lg font-medium text-sm hover:bg-slate-200 transition-colors"
+          >
+            Skip — Test Email Composer
+          </button>
         </form>
       </div>
     </div>
