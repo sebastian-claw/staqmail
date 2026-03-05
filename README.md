@@ -54,6 +54,12 @@ Install Visual Studio Build Tools with C++ workload, or use WSL for easier setup
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
+Make sure Rust is up to date:
+
+```bash
+rustup update
+```
+
 ### Running
 
 ```bash
@@ -98,3 +104,15 @@ src-tauri/
 - ✅ TypeScript compiles clean
 - ✅ All frontend components scaffolded
 - ⚠️  Tauri dev requires GTK system libs (see Prerequisites above)
+
+## Troubleshooting
+
+### "feature `edition2024` is required" error
+
+This means your Rust version is outdated. Update Rust:
+
+```bash
+rustup update
+```
+
+Then try `npm run tauri:dev` again.
