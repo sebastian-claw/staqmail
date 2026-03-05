@@ -8,6 +8,9 @@ import Color from "@tiptap/extension-color";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
+import Underline from "@tiptap/extension-underline";
+import Typography from "@tiptap/extension-typography";
+import FontFamily from "@tiptap/extension-font-family";
 import { useEffect } from "react";
 import { useAppStore } from "@/lib/store/app-store";
 import EditorToolbar from "./EditorToolbar";
@@ -18,10 +21,15 @@ export default function EmailEditor() {
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        heading: { levels: [1, 2, 3] },
+      }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       TextStyle,
       Color,
+      FontFamily,
+      Typography,
+      Underline,
       Image.configure({ inline: false, allowBase64: true }),
       Link.configure({ openOnClick: false }),
       Placeholder.configure({ placeholder: "Start composing your email..." }),

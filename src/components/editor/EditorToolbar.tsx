@@ -12,12 +12,26 @@ import {
   ListOrdered,
   Heading1,
   Heading2,
-  Link,
+  Heading3,
   Image,
+  Link,
   Undo,
   Redo,
+  Minus,
+  Type,
+  Palette,
+  Square,
+  Share2,
+  Twitter,
+  Facebook,
+  Instagram,
+  Linkedin,
+  Youtube,
+  Mail,
 } from "lucide-react";
+
 import { cn } from "@/lib/utils";
+import { useState, useRef } from "react";
 
 interface ToolbarButtonProps {
   onClick: () => void;
@@ -49,11 +63,140 @@ function Divider() {
   return <div className="w-px h-5 bg-slate-200 mx-1" />;
 }
 
+interface ColorPickerProps {
+  color: string;
+  onChange: (color: string) => void;
+  title: string;
+}
+
+function ColorPicker({ color, onChange, title }: ColorPickerProps) {
+  const colors = [
+    "#000000", "#374151", "#6B7280", "#9CA3AF", "#FFFFFF",
+    "#DC2626", "#EA580C", "#D97706", "#65A30D", "#16A34A",
+    "#0891B2", "#2563EB", "#4F46E5", "#7C3AED", "#DB2777",
+  ];
+  
+  const [isOpen, setIsOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  return (
+    <div className="relative" ref={wrapperRef}>
+      <ToolbarButton
+        title={title}
+        onClick={() => setIsOpen(!isOpen)}
+        active={isOpen}
+      >
+        <Palette size={16} />
+      </ToolbarButton>
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-1 p-2 bg-white border border-slate-200 rounded-lg shadow-lg z-50">
+          <div className="grid grid-cols-5 gap-1">
+            {colors.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => {
+                  onChange(c);
+                  setIsOpen(false);
+                }}
+                className={cn(
+                  "w-6 h-6 rounded border border-slate-200",
+                  color === c && "ring-2 ring-offset-1 ring-slate-400"
+                )}
+                style={{ backgroundColor: c }}
+                title={c}
+              />
+            ))}
+          </div>
+          <input
+            type="color"
+            value={color}
+            onChange={(e) => onChange(e.target.value)}
+            className="mt-2 w-full h-6 cursor-pointer"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface FontSelectProps {
+  value: string;
+  onChange: (font: string) => void;
+  options: { label: string; value: string }[];
+  title: string;
+}
+
+function FontSelect({ value, onChange, options, title }: FontSelectProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  return (
+    <div className="relative" ref={wrapperRef}>
+      <ToolbarButton
+        title={title}
+        onClick={() => setIsOpen(!isOpen)}
+        active={isOpen}
+      >
+        <Type size={16} />
+      </ToolbarButton>
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-1 p-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50 min-w-[120px]">
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => {
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+              className={cn(
+                "w-full px-2 py-1 text-left text-sm rounded hover:bg-slate-100",
+                value === opt.value && "bg-slate-200 font-medium"
+              )}
+              style={{ fontFamily: opt.value }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface EditorToolbarProps {
   editor: Editor | null;
 }
 
+const fontFamilies = [
+  { label: "Sans Serif", value: "sans-serif" },
+  { label: "Serif", value: "serif" },
+  { label: "Arial", value: "Arial, sans-serif" },
+  { label: "Georgia", value: "Georgia, serif" },
+  { label: "Times New Roman", value: "'Times New Roman', serif" },
+  { label: "Verdana", value: "Verdana, sans-serif" },
+  { label: "Helvetica", value: "Helvetica, sans-serif" },
+];
+
+const fontSizes = [
+  { label: "12px", value: "12px" },
+  { label: "14px", value: "14px" },
+  { label: "16px", value: "16px" },
+  { label: "18px", value: "18px" },
+  { label: "20px", value: "20px" },
+  { label: "24px", value: "24px" },
+  { label: "32px", value: "32px" },
+  { label: "36px", value: "36px" },
+  { label: "48px", value: "48px" },
+];
+
 export default function EditorToolbar({ editor }: EditorToolbarProps) {
+  const [textColor, setTextColor] = useState("#000000");
+  const [linkColor, setLinkColor] = useState("#2563EB");
+  const [fontFamily, setFontFamily] = useState("sans-serif");
+  const [fontSize, setFontSize] = useState("16px");
+
   if (!editor) return null;
 
   const addLink = () => {
@@ -68,6 +211,46 @@ export default function EditorToolbar({ editor }: EditorToolbarProps) {
     if (url) {
       editor.chain().focus().setImage({ src: url }).run();
     }
+  };
+
+  const addDivider = () => {
+    editor.chain().focus().setHorizontalRule().run();
+  };
+
+  const setTextColorHandler = (color: string) => {
+    setTextColor(color);
+    editor.chain().focus().setColor(color).run();
+  };
+
+  const setLinkColorHandler = (color: string) => {
+    setLinkColor(color);
+    if (editor.isActive("link")) {
+      editor.chain().focus().updateAttributes("link", { color }).run();
+    }
+  };
+
+  const addButton = () => {
+    const url = window.prompt("Enter button URL:") || "#";
+    const text = window.prompt("Enter button text:") || "Click Here";
+    const btnColor = window.prompt("Enter button color (hex):", "#2563EB") || "#2563EB";
+    
+    const html = `<a href="${url}" style="display: inline-block; padding: 12px 24px; background-color: ${btnColor}; color: #ffffff; text-decoration: none; border-radius: 4px; font-weight: bold;">${text}</a><p></p>`;
+    editor.chain().focus().insertContent(html).run();
+  };
+
+  const addSocialButton = (platform: string) => {
+    const icons: Record<string, string> = {
+      twitter: "https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/x.svg",
+      facebook: "https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/facebook.svg",
+      instagram: "https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/instagram.svg",
+      linkedin: "https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/linkedin.svg",
+      youtube: "https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/youtube.svg",
+      email: "mailto:",
+    };
+    
+    const url = window.prompt(`Enter ${platform} URL:`) || "#";
+    const html = `<a href="${url}" style="display: inline-block; margin: 0 4px;"><img src="${icons[platform]}" alt="${platform}" width="32" height="32" /></a>`;
+    editor.chain().focus().insertContent(html).run();
   };
 
   return (
@@ -89,6 +272,30 @@ export default function EditorToolbar({ editor }: EditorToolbarProps) {
 
       <Divider />
 
+      {/* Font Family */}
+      <FontSelect
+        value={fontFamily}
+        onChange={(font) => {
+          setFontFamily(font);
+          editor.chain().focus().setFontFamily(font).run();
+        }}
+        options={fontFamilies}
+        title="Font Family"
+      />
+
+      {/* Font Size */}
+      <FontSelect
+        value={fontSize}
+        onChange={(size) => {
+          setFontSize(size);
+          editor.chain().focus().setFontSize(size).run();
+        }}
+        options={fontSizes}
+        title="Font Size"
+      />
+
+      <Divider />
+
       <ToolbarButton
         title="Heading 1"
         onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
@@ -102,6 +309,13 @@ export default function EditorToolbar({ editor }: EditorToolbarProps) {
         active={editor.isActive("heading", { level: 2 })}
       >
         <Heading2 size={16} />
+      </ToolbarButton>
+      <ToolbarButton
+        title="Heading 3"
+        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+        active={editor.isActive("heading", { level: 3 })}
+      >
+        <Heading3 size={16} />
       </ToolbarButton>
 
       <Divider />
@@ -120,6 +334,29 @@ export default function EditorToolbar({ editor }: EditorToolbarProps) {
       >
         <Italic size={16} />
       </ToolbarButton>
+      <ToolbarButton
+        title="Underline"
+        onClick={() => editor.chain().focus().toggleUnderline().run()}
+        active={editor.isActive("underline")}
+      >
+        <Underline size={16} />
+      </ToolbarButton>
+
+      <Divider />
+
+      {/* Text Color */}
+      <ColorPicker
+        color={textColor}
+        onChange={setTextColorHandler}
+        title="Text Color"
+      />
+
+      {/* Link Color */}
+      <ColorPicker
+        color={linkColor}
+        onChange={setLinkColorHandler}
+        title="Link Color"
+      />
 
       <Divider />
 
@@ -170,6 +407,41 @@ export default function EditorToolbar({ editor }: EditorToolbarProps) {
       <ToolbarButton title="Insert Image" onClick={addImage}>
         <Image size={16} />
       </ToolbarButton>
+      <ToolbarButton title="Insert Divider" onClick={addDivider}>
+        <Minus size={16} />
+      </ToolbarButton>
+      <ToolbarButton title="Insert Button" onClick={addButton}>
+        <Square size={16} />
+      </ToolbarButton>
+
+      <Divider />
+
+      {/* Social Buttons */}
+      <div className="relative group">
+        <ToolbarButton title="Social Icons" onClick={() => {}}>
+          <Share2 size={16} />
+        </ToolbarButton>
+        <div className="absolute top-full left-0 mt-1 p-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50 hidden group-hover:grid grid-cols-3 gap-1">
+          <button type="button" onClick={() => addSocialButton("twitter")} title="X (Twitter)" className="p-1.5 hover:bg-slate-100 rounded">
+            <Twitter size={16} />
+          </button>
+          <button type="button" onClick={() => addSocialButton("facebook")} title="Facebook" className="p-1.5 hover:bg-slate-100 rounded">
+            <Facebook size={16} />
+          </button>
+          <button type="button" onClick={() => addSocialButton("instagram")} title="Instagram" className="p-1.5 hover:bg-slate-100 rounded">
+            <Instagram size={16} />
+          </button>
+          <button type="button" onClick={() => addSocialButton("linkedin")} title="LinkedIn" className="p-1.5 hover:bg-slate-100 rounded">
+            <Linkedin size={16} />
+          </button>
+          <button type="button" onClick={() => addSocialButton("youtube")} title="YouTube" className="p-1.5 hover:bg-slate-100 rounded">
+            <Youtube size={16} />
+          </button>
+          <button type="button" onClick={() => addSocialButton("email")} title="Email" className="p-1.5 hover:bg-slate-100 rounded">
+            <Mail size={16} />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
